@@ -12,3 +12,7 @@ frontend/tsconfig.tsbuildinfo
 
 .env
 duckdns.log
+
+# static-artifact 빌드 산출물/캐시 (GitHub Actions가 매번 새로 만듦, 레포에 커밋 안 함)
+static-artifact/naver_cache/
+static-artifact/decoupling-demo.html

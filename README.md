@@ -160,6 +160,25 @@ npm run dev
 경우를 대비해 KRX 직접 호출 경로(`krx_client.py`)도 남겨뒀으며, 한국
 리전 서버가 있다면 그쪽을 대안으로 쓸 수 있습니다.
 
+## 정적 스냅샷 배포(vercel-static) + 데이터 자동 갱신
+
+백엔드(FastAPI)가 실제 서버에 배포되어 있지 않은 현재 상태에서도 사용자에게
+실데이터 기반 데모를 보여주기 위해, `static-artifact/`가 Naver 데이터를
+수집해 `vercel-static/index.html` 하나짜리 정적 스냅샷 페이지를 만듭니다.
+Vercel이 이 레포의 `vercel-static/`을 Root Directory로 배포합니다.
+
+- `static-artifact/collect_and_build.py` — `backend/app/naver_client.py`의
+  검증된 수집/보정 로직(ETF·인버스·레버리지 제외, 액면분할/감자 자동
+  역보정 등)을 그대로 재사용해 데이터를 수집하고, `build_real_artifact.py`로
+  `vercel-static/index.html`을 새로 만듭니다.
+- **`.github/workflows/refresh-data.yml`**이 평일 한국시간 16:10(장 마감 후)에
+  이 스크립트를 자동 실행하고, 변경된 `vercel-static/index.html`을 자동
+  커밋·푸시합니다. Vercel은 푸시를 감지해 자동 재배포하므로, 별도 서버 없이
+  매일 데이터가 갱신됩니다. Actions 탭에서 수동 실행(`workflow_dispatch`)도
+  가능합니다.
+- Claude Artifact 쪽(claude.ai/code/artifact/...)은 이 자동화 대상이
+  아닙니다 — Artifact는 세션에서 직접 publish해야 갱신됩니다.
+
 ## 한계 고지
 
 > 상관관계는 지정된 과거 기간 내 통계적 관계이며, 미래에도 동일하게

@@ -1,0 +1,45 @@
+name: 데이터 자동 갱신
+
+on:
+  schedule:
+    # 매일 07:10 UTC = 한국시간(KST) 16:10 (장 마감 15:30 이후 여유를 둠)
+    # 주말은 장이 없으므로 평일(월~금)에만 실행
+    - cron: "10 7 * * 1-5"
+  workflow_dispatch: {} # 수동 실행 버튼(Actions 탭)으로도 즉시 실행 가능
+
+permissions:
+  contents: write
+
+concurrency:
+  group: refresh-data
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install pandas numpy requests
+
+      - name: Naver 데이터 수집 + 정적 아티팩트 빌드
+        run: python3 collect_and_build.py
+        working-directory: static-artifact
+
+      - name: 변경사항 커밋 & 푸시
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add vercel-static/index.html
+          if git diff --cached --quiet; then
+            echo "변경된 데이터 없음 - 커밋 생략"
+            exit 0
+          fi
+          git commit -m "chore: 데이터 자동 갱신 $(date -u +%Y-%m-%d)"
+          git push
